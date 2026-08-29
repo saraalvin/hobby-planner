@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GraphQLClient, gql } from 'graphql-request';
 import StashSection from './StashSection';
-import './App.css';
 
 const client = new GraphQLClient('http://localhost:4000/');
 
@@ -56,26 +55,33 @@ function App() {
   };
 
   return (
-    <div>
-      <h1>My Sewing Stash</h1>
-      <StashSection title="Fabrics" items={fabrics} onAdd={addFabric} fields={[
-        { name: 'name', placeholder: 'Fabric name', required: true },
-        { name: 'quantity', placeholder: 'Quantity (m)', type: 'number' },
-        { name: 'notes', placeholder: 'Notes' },
-      ]} />
-      <StashSection title="Notions" items={notions} onAdd={addNotion} fields={[
-        { name: 'name', placeholder: 'Notion name', required: true },
-        { name: 'quantity', placeholder: 'Quantity', type: 'number' },
-        { name: 'notes', placeholder: 'Notes' },
-      ]} />
-      <StashSection title="Patterns" items={patterns} onAdd={addPattern} fields={[
-        { name: 'name', placeholder: 'Pattern name', required: true },
-        { name: 'notes', placeholder: 'Notes' },
-      ]} />
-      <StashSection title="Tools" items={tools} onAdd={addTool} fields={[
-        { name: 'name', placeholder: 'Tool name', required: true },
-        { name: 'notes', placeholder: 'Notes' },
-      ]} />
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-2xl font-semibold text-slate-800">My Sewing Stash</h1>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <StashSection title="Fabrics" items={fabrics} onAdd={addFabric} fields={[
+          { name: 'name', placeholder: 'Fabric name', required: true },
+          { name: 'quantity', placeholder: 'Quantity (m)', type: 'number' },
+          { name: 'notes', placeholder: 'Notes' },
+        ]} />
+        <StashSection title="Notions" items={notions} onAdd={addNotion} fields={[
+          { name: 'name', placeholder: 'Notion name', required: true },
+          { name: 'quantity', placeholder: 'Quantity', type: 'number' },
+          { name: 'notes', placeholder: 'Notes' },
+        ]} />
+        <StashSection title="Patterns" items={patterns} onAdd={addPattern} fields={[
+          { name: 'name', placeholder: 'Pattern name', required: true },
+          { name: 'notes', placeholder: 'Notes' },
+        ]} />
+        <StashSection title="Tools" items={tools} onAdd={addTool} fields={[
+          { name: 'name', placeholder: 'Tool name', required: true },
+          { name: 'notes', placeholder: 'Notes' },
+        ]} />
+      </main>
     </div>
   );
 }
