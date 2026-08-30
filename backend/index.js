@@ -32,18 +32,28 @@ const fabricCrud = makeCrud('fabrics', ['name', 'quantity', 'notes']);
 const notionCrud = makeCrud('notions', ['name', 'quantity', 'notes']);
 const patternCrud = makeCrud('patterns', ['name', 'notes']);
 const toolCrud = makeCrud('tools', ['name', 'notes']);
+const measurementCrud = makeCrud('measurements', ['person_name', 'bust', 'waist', 'hip', 'notes']);
 
 const typeDefs = `#graphql
   type Fabric { id: ID! name: String! quantity: Float notes: String }
   type Notion { id: ID! name: String! quantity: Float notes: String }
   type Pattern { id: ID! name: String! notes: String }
   type Tool { id: ID! name: String! notes: String }
+  type Measurement {
+    id: ID!
+    person_name: String!
+    bust: Float
+    waist: Float
+    hip: Float
+    notes: String
+  }
 
   type Query {
     fabrics: [Fabric!]!
     notions: [Notion!]!
     patterns: [Pattern!]!
     tools: [Tool!]!
+    measurements: [Measurement!]!
   }
 
   type Mutation {
@@ -51,6 +61,7 @@ const typeDefs = `#graphql
     addNotion(name: String!, quantity: Float, notes: String): Notion!
     addPattern(name: String!, notes: String): Pattern!
     addTool(name: String!, notes: String): Tool!
+    addMeasurement(person_name: String!, bust: Float, waist: Float, hip: Float, notes: String): Measurement!
   }
 `;
 
@@ -60,12 +71,14 @@ const resolvers = {
     notions: notionCrud.list,
     patterns: patternCrud.list,
     tools: toolCrud.list,
+    measurements: measurementCrud.list,
   },
   Mutation: {
     addFabric: (_, args) => fabricCrud.create(args),
     addNotion: (_, args) => notionCrud.create(args),
     addPattern: (_, args) => patternCrud.create(args),
     addTool: (_, args) => toolCrud.create(args),
+    addMeasurement: (_, args) => measurementCrud.create(args),
   },
 };
 
