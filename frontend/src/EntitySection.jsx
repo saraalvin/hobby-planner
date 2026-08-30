@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-function StashSection({ title, items, fields, onAdd }) {
+function EntitySection({ title, items, fields, onAdd }) {
   const emptyForm = Object.fromEntries(fields.map((f) => [f.name, '']));
   const [formValues, setFormValues] = useState(emptyForm);
+  const [titleField, ...restFields] = fields;
 
   const handleChange = (fieldName) => (e) => {
     setFormValues({ ...formValues, [fieldName]: e.target.value });
@@ -36,10 +37,7 @@ function StashSection({ title, items, fields, onAdd }) {
             className="flex-1 min-w-[120px] rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
           />
         ))}
-        <button
-          type="submit"
-          className="rounded-md bg-teal-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-teal-700"
-        >
+        <button type="submit" className="rounded-md bg-teal-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-teal-700">
           Add
         </button>
       </form>
@@ -47,9 +45,12 @@ function StashSection({ title, items, fields, onAdd }) {
       <ul className="divide-y divide-slate-100">
         {items.map((item) => (
           <li key={item.id} className="py-2 text-sm text-slate-700">
-            <span className="font-medium">{item.name}</span>
-            {item.quantity != null && <span className="text-slate-500"> — {item.quantity}</span>}
-            {item.notes && <span className="text-slate-400"> ({item.notes})</span>}
+            <span className="font-medium">{item[titleField.name]}</span>
+            {restFields.map((f) =>
+              item[f.name] !== null && item[f.name] !== undefined && item[f.name] !== '' ? (
+                <span key={f.name} className="text-slate-500"> · {f.placeholder}: {item[f.name]}</span>
+              ) : null
+            )}
           </li>
         ))}
       </ul>
@@ -58,4 +59,4 @@ function StashSection({ title, items, fields, onAdd }) {
   );
 }
 
-export default StashSection;
+export default EntitySection;
