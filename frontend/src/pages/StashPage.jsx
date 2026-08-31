@@ -55,11 +55,12 @@ function StashPage() {
     client.request(TOOLS_QUERY).then((d) => setTools(d.tools));
   }, []);
 
-  useEffect(() => {
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
     setImportUrl('');
     setImportError(null);
     setPrefill(null);
-  }, [activeTab]);
+  };
 
   const addFabric = async (vars) => {
     const data = await client.request(ADD_FABRIC, vars);
@@ -89,7 +90,7 @@ function StashPage() {
         photo_url: data.importFromUrl.image || '',
         notes: data.importFromUrl.description || '',
       });
-    } catch (err) {
+    } catch {
       setImportError('Could not fetch that page — check the URL and try again.');
     }
     setImporting(false);
@@ -104,7 +105,7 @@ function StashPage() {
     <div>
       <div className="flex gap-2 border-b border-slate-200 mb-6">
         {TABS.map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={tabButtonClass(tab)}>
+          <button key={tab} onClick={() => handleTabClick(tab)} className={tabButtonClass(tab)}>
             {tab}
           </button>
         ))}
@@ -128,7 +129,9 @@ function StashPage() {
           </button>
           {importError && <p className="text-sm text-red-600 w-full">{importError}</p>}
           {prefill && !importError && (
-            <p className="text-sm text-teal-700 w-full">Found "{prefill.name || 'untitled'}" — review and adjust below, then Add.</p>
+            <p className="text-sm text-teal-700 w-full">
+              Found &ldquo;{prefill.name || 'untitled'}&rdquo; — review and adjust below, then Add.
+            </p>
           )}
         </div>
       )}

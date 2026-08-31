@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import supabase from './supabaseClient';
 
 function EntitySection({ title, items, fields, onAdd, prefill }) {
@@ -8,11 +8,13 @@ function EntitySection({ title, items, fields, onAdd, prefill }) {
   const [titleField, ...restFields] = fields;
   const photoField = fields.find((f) => f.type === 'photo');
 
-  useEffect(() => {
+  const [prevPrefill, setPrevPrefill] = useState(prefill);
+  if (prefill !== prevPrefill) {
+    setPrevPrefill(prefill);
     if (prefill) {
       setFormValues((prev) => ({ ...prev, ...prefill }));
     }
-  }, [prefill]);
+  }
 
   const handleChange = (fieldName) => (e) => {
     setFormValues({ ...formValues, [fieldName]: e.target.value });
