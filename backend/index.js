@@ -1,6 +1,7 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import pkg from 'pg';
+import * as cheerio from 'cheerio';
 import 'dotenv/config';
 
 const { Pool } = pkg;
@@ -35,6 +36,26 @@ const toolCrud = makeCrud('tools', ['name', 'notes']);
 const personCrud = makeCrud('people', ['name', 'notes']);
 const historyCrud = makeCrud('measurement_history', ['person_id', 'bust', 'waist', 'hip', 'notes']);
 
+async function fetchOpenGraphData(url) {
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SewingStashBot/1.0)' },
+  });
+  if (!response.ok) {
+    throw new Error(`Site responded with ${response.status}`);
+  }
+  const html = await response.text();
+  const $ = cheerio.load(html);
+
+  const getMeta = (name) =>
+    $(`meta[property="${name}"]`).attr('content') || $(`meta[name="${name}"]`).attr('content') || null;
+
+  return {
+    title: getMeta('og:title') || $('title').text() || null,
+    image: getMeta('og:image') || null,
+    description: getMeta('og:description') || getMeta('description') || null,
+  };
+}
+
 const typeDefs = `#graphql
   type Fabric { id: ID! name: String! quantity: Float notes: String photo_url: String }
   type Notion { id: ID! name: String! quantity: Float notes: String photo_url: String }
@@ -58,12 +79,19 @@ const typeDefs = `#graphql
     history: [MeasurementRecord!]!
   }
 
+  type ImportPreview {
+    title: String
+    image: String
+    description: String
+  }
+
   type Query {
     fabrics: [Fabric!]!
     notions: [Notion!]!
     patterns: [Pattern!]!
     tools: [Tool!]!
     people: [Person!]!
+    importFromUrl(url: String!): ImportPreview!
   }
 
   type Mutation {
@@ -83,6 +111,13 @@ const resolvers = {
     patterns: patternCrud.list,
     tools: toolCrud.list,
     people: personCrud.list,
+    importFromUrl: async (_, { url }) => {
+      try {
+        return await fetchOpenGraphData(url);
+      } catch (err) {
+        throw new Error(`Could not fetch that page: ${err.message}`);
+      }
+    },
   },
   Mutation: {
     addFabric: (_, args) => fabricCrud.create(args),
