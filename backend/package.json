@@ -12,6 +12,7 @@
   "type": "module",
   "dependencies": {
     "@apollo/server": "^5.5.1",
+    "@supabase/supabase-js": "^2.112.4",
     "dotenv": "^17.4.2",
     "graphql": "^16.14.2",
     "pg": "^8.23.0"

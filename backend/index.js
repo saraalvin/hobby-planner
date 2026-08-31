@@ -28,24 +28,34 @@ function makeCrud(table, columns) {
   };
 }
 
-const fabricCrud = makeCrud('fabrics', ['name', 'quantity', 'notes']);
-const notionCrud = makeCrud('notions', ['name', 'quantity', 'notes']);
-const patternCrud = makeCrud('patterns', ['name', 'notes']);
+const fabricCrud = makeCrud('fabrics', ['name', 'quantity', 'notes', 'photo_url']);
+const notionCrud = makeCrud('notions', ['name', 'quantity', 'notes', 'photo_url']);
+const patternCrud = makeCrud('patterns', ['name', 'notes', 'photo_url', 'file_url']);
 const toolCrud = makeCrud('tools', ['name', 'notes']);
-const measurementCrud = makeCrud('measurements', ['person_name', 'bust', 'waist', 'hip', 'notes']);
+const personCrud = makeCrud('people', ['name', 'notes']);
+const historyCrud = makeCrud('measurement_history', ['person_id', 'bust', 'waist', 'hip', 'notes']);
 
 const typeDefs = `#graphql
-  type Fabric { id: ID! name: String! quantity: Float notes: String }
-  type Notion { id: ID! name: String! quantity: Float notes: String }
-  type Pattern { id: ID! name: String! notes: String }
+  type Fabric { id: ID! name: String! quantity: Float notes: String photo_url: String }
+  type Notion { id: ID! name: String! quantity: Float notes: String photo_url: String }
+  type Pattern { id: ID! name: String! notes: String photo_url: String file_url: String }
   type Tool { id: ID! name: String! notes: String }
-  type Measurement {
+
+  type MeasurementRecord {
     id: ID!
-    person_name: String!
+    person_id: ID!
+    date_taken: String
     bust: Float
     waist: Float
     hip: Float
     notes: String
+  }
+
+  type Person {
+    id: ID!
+    name: String!
+    notes: String
+    history: [MeasurementRecord!]!
   }
 
   type Query {
@@ -53,15 +63,16 @@ const typeDefs = `#graphql
     notions: [Notion!]!
     patterns: [Pattern!]!
     tools: [Tool!]!
-    measurements: [Measurement!]!
+    people: [Person!]!
   }
 
   type Mutation {
-    addFabric(name: String!, quantity: Float, notes: String): Fabric!
-    addNotion(name: String!, quantity: Float, notes: String): Notion!
-    addPattern(name: String!, notes: String): Pattern!
+    addFabric(name: String!, quantity: Float, notes: String, photo_url: String): Fabric!
+    addNotion(name: String!, quantity: Float, notes: String, photo_url: String): Notion!
+    addPattern(name: String!, notes: String, photo_url: String, file_url: String): Pattern!
     addTool(name: String!, notes: String): Tool!
-    addMeasurement(person_name: String!, bust: Float, waist: Float, hip: Float, notes: String): Measurement!
+    addPerson(name: String!, notes: String): Person!
+    addMeasurementRecord(person_id: ID!, bust: Float, waist: Float, hip: Float, notes: String): MeasurementRecord!
   }
 `;
 
@@ -71,14 +82,24 @@ const resolvers = {
     notions: notionCrud.list,
     patterns: patternCrud.list,
     tools: toolCrud.list,
-    measurements: measurementCrud.list,
+    people: personCrud.list,
   },
   Mutation: {
     addFabric: (_, args) => fabricCrud.create(args),
     addNotion: (_, args) => notionCrud.create(args),
     addPattern: (_, args) => patternCrud.create(args),
     addTool: (_, args) => toolCrud.create(args),
-    addMeasurement: (_, args) => measurementCrud.create(args),
+    addPerson: (_, args) => personCrud.create(args),
+    addMeasurementRecord: (_, args) => historyCrud.create(args),
+  },
+  Person: {
+    history: async (parent) => {
+      const result = await pool.query(
+        'SELECT * FROM measurement_history WHERE person_id = $1 ORDER BY date_taken DESC',
+        [parent.id]
+      );
+      return result.rows;
+    },
   },
 };
 
