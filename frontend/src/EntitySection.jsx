@@ -1,12 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import supabase from './supabaseClient';
 
-function EntitySection({ title, items, fields, onAdd }) {
+function EntitySection({ title, items, fields, onAdd, prefill }) {
   const emptyForm = Object.fromEntries(fields.map((f) => [f.name, '']));
   const [formValues, setFormValues] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [titleField, ...restFields] = fields;
   const photoField = fields.find((f) => f.type === 'photo');
+
+  useEffect(() => {
+    if (prefill) {
+      setFormValues((prev) => ({ ...prev, ...prefill }));
+    }
+  }, [prefill]);
 
   const handleChange = (fieldName) => (e) => {
     setFormValues({ ...formValues, [fieldName]: e.target.value });
@@ -47,8 +53,8 @@ function EntitySection({ title, items, fields, onAdd }) {
         {fields.map((f) =>
           f.type === 'photo' ? (
             <div key={f.name} className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500">{f.placeholder}</label>
-            <input type="file" accept="image/*" onChange={handlePhotoChange(f.name)} className="text-sm" />
+              <label className="text-xs font-medium text-slate-500">{f.placeholder}</label>
+              <input type="file" accept="image/*" onChange={handlePhotoChange(f.name)} className="text-sm" />
               {formValues[f.name] && (
                 <img src={formValues[f.name]} alt="" className="w-16 h-16 object-cover rounded" />
               )}
