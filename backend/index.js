@@ -35,6 +35,16 @@ const patternCrud = makeCrud('patterns', ['name', 'notes', 'photo_url', 'file_ur
 const toolCrud = makeCrud('tools', ['name', 'notes']);
 const personCrud = makeCrud('people', ['name', 'notes']);
 const historyCrud = makeCrud('measurement_history', ['person_id', 'bust', 'waist', 'hip', 'notes']);
+const projectCrud = makeCrud('projects', ['name', 'status', 'pattern_id', 'person_id', 'size_chosen', 'notes']);
+
+const DEFAULT_PROJECT_STEPS = [
+  'Pattern prep',
+  'Cut fabric',
+  'Muslin/fitting',
+  'Sew',
+  'Finishing/hem',
+  'Photograph',
+];
 
 async function fetchOpenGraphData(url) {
   const response = await fetch(url, {
@@ -85,12 +95,31 @@ const typeDefs = `#graphql
     description: String
   }
 
+  type ProjectStep {
+    id: ID!
+    step_name: String!
+    is_done: Boolean!
+    position: Int!
+  }
+
+  type Project {
+    id: ID!
+    name: String!
+    status: String!
+    size_chosen: String
+    notes: String
+    pattern: Pattern
+    person: Person
+    steps: [ProjectStep!]!
+  }
+
   type Query {
     fabrics: [Fabric!]!
     notions: [Notion!]!
     patterns: [Pattern!]!
     tools: [Tool!]!
     people: [Person!]!
+    projects: [Project!]!
     importFromUrl(url: String!): ImportPreview!
   }
 
@@ -101,6 +130,9 @@ const typeDefs = `#graphql
     addTool(name: String!, notes: String): Tool!
     addPerson(name: String!, notes: String): Person!
     addMeasurementRecord(person_id: ID!, bust: Float, waist: Float, hip: Float, notes: String): MeasurementRecord!
+    addProject(name: String!, pattern_id: ID, person_id: ID, size_chosen: String, notes: String): Project!
+    updateProjectStatus(id: ID!, status: String!): Project!
+    toggleStep(id: ID!): ProjectStep!
   }
 `;
 
@@ -111,6 +143,7 @@ const resolvers = {
     patterns: patternCrud.list,
     tools: toolCrud.list,
     people: personCrud.list,
+    projects: projectCrud.list,
     importFromUrl: async (_, { url }) => {
       try {
         return await fetchOpenGraphData(url);
@@ -126,6 +159,27 @@ const resolvers = {
     addTool: (_, args) => toolCrud.create(args),
     addPerson: (_, args) => personCrud.create(args),
     addMeasurementRecord: (_, args) => historyCrud.create(args),
+    addProject: async (_, args) => {
+      const project = await projectCrud.create(args);
+      await pool.query(
+        `INSERT INTO project_steps (project_id, step_name, position)
+         SELECT $1, name, position
+         FROM UNNEST($2::text[]) WITH ORDINALITY AS t(name, position)`,
+        [project.id, DEFAULT_PROJECT_STEPS]
+      );
+      return project;
+    },
+    updateProjectStatus: async (_, { id, status }) => {
+      const result = await pool.query('UPDATE projects SET status = $1 WHERE id = $2 RETURNING *', [status, id]);
+      return result.rows[0];
+    },
+    toggleStep: async (_, { id }) => {
+      const result = await pool.query(
+        'UPDATE project_steps SET is_done = NOT is_done WHERE id = $1 RETURNING *',
+        [id]
+      );
+      return result.rows[0];
+    },
   },
   Person: {
     history: async (parent) => {
@@ -133,6 +187,24 @@ const resolvers = {
         'SELECT * FROM measurement_history WHERE person_id = $1 ORDER BY date_taken DESC',
         [parent.id]
       );
+      return result.rows;
+    },
+  },
+  Project: {
+    pattern: async (parent) => {
+      if (!parent.pattern_id) return null;
+      const result = await pool.query('SELECT * FROM patterns WHERE id = $1', [parent.pattern_id]);
+      return result.rows[0] || null;
+    },
+    person: async (parent) => {
+      if (!parent.person_id) return null;
+      const result = await pool.query('SELECT * FROM people WHERE id = $1', [parent.person_id]);
+      return result.rows[0] || null;
+    },
+    steps: async (parent) => {
+      const result = await pool.query('SELECT * FROM project_steps WHERE project_id = $1 ORDER BY position', [
+        parent.id,
+      ]);
       return result.rows;
     },
   },
